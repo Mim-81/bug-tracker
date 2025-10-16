@@ -38,37 +38,36 @@ pipeline {
                             }
                         }
                     }
+                    stage('Unit Tests - Frontend') {
+                        agent{
+                            docker{
+                                image 'node:20-alpine'
+                                args '-u 0:0' // to run as root user
+                                reuseNode true
+                            }
+                        }
+                        steps {
+                            dir('bugtracker-frontend'){
+                                sh '''
+                                    npm ci
+                                    npm test
+                                    mkdir -p reports
+                                    mv coverage reports/
+                                '''
+                            }
+                        }
+                        post {
+                            always {
+                                junit 'bugtracker-frontend/test-results.xml'
+                                publishHTML target:[
+                                    reportDir: 'bugtracker-frontend/reports/coverage',
+                                    reportFiles: 'index.html',
+                                    reportName: 'Frontend Coverage Report'
+                                ]
+                            }
+                        }
+                    }
 
-                }
-
-                stage('Unit Tests - Frontend') {
-                    agent{
-                        docker{
-                            image 'node:20-alpine'
-                            args '-u 0:0' // to run as root user
-                            reuseNode true
-                        }
-                    }
-                    steps {
-                        dir('bugtracker-frontend'){
-                            sh '''
-                                npm ci
-                                npm test
-                                mkdir -p reports
-                                mv coverage reports/
-                            '''
-                        }
-                    }
-                    post {
-                        always {
-                            junit 'bugtracker-frontend/test-results.xml'
-                            publishHTML target:[
-                                reportDir: 'bugtracker-frontend/reports/coverage',
-                                reportFiles: 'index.html',
-                                reportName: 'Frontend Coverage Report'
-                            ]
-                        }
-                    }
                 }
             }
         }
