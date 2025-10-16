@@ -9,7 +9,7 @@ pipeline {
           agent {
             docker {
               image 'snakee/golang-junit:1.21'
-              args '-u 0:0' // to run as root user
+              args '-u 0:0'                  // run as root to avoid perms issues
               reuseNode true
             }
           }
@@ -18,7 +18,7 @@ pipeline {
               sh '''
                 go test -v ./... 2>&1 | go-junit-report > test-results.xml
 
-                #Generate coverage report
+                # Generate coverage report
                 go test -coverprofile=coverage.out -covermode=atomic ./...
                 go tool cover -html=coverage.out -o coverage.html
 
@@ -46,7 +46,7 @@ pipeline {
           agent {
             docker {
               image 'node:20-alpine'
-              args '-u 0:0' // to run as root user
+              args '-u 0:0'
               reuseNode true
             }
           }
@@ -76,8 +76,24 @@ pipeline {
         }
 
       } // end parallel
-    } // end stage
-  } // end stages
+    }
+
+    stage('Launch Application') {
+      // Use docker CLI image and bind the host socket
+      agent {
+        docker {
+          image 'docker:27-cli'
+          args '-v /var/run/docker.sock:/var/run/docker.sock -u 0'
+          reuseNode true
+        }
+      }
+      steps {
+        // The workspace CWD is the repo root (even though Jenkinsfile is under jenkins/)
+        // Use the ROOT docker-compose.yml for your app:
+        sh 'docker compose -f docker-compose.yml up --build -d'
+      }
+    }
+  }
 
   post {
     always {
