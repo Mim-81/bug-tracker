@@ -93,6 +93,41 @@ pipeline {
         sh 'docker compose -f docker-compose.yml up --build -d'
       }
     }
+
+    stage('API Tests') {
+      agent {
+        docker {
+          image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+          args '-u 0:0 --network host'  // Use host networking to access the app
+          reuseNode true
+        }
+      }
+      steps {
+        dir('tests-api') {
+        //   sh '''
+        //     npm ci
+        //     npx playwright install --with-deps
+        //     npx playwright test api --reporter=junit --output=./test-results
+        //   '''
+            sh 'npx wait-port http://localhost:8080/api/health -t 30000'
+            sh ' npm ci'
+            sh 'npx playwright test'
+        }
+      }
+    //   post {
+    //     always {
+    //       junit 'tests-api/test-results/*.xml'
+    //       publishHTML(target: [
+    //         reportDir: 'tests-api/test-results/html',
+    //         reportFiles: 'index.html',
+    //         reportName: 'API Test Report',
+    //         keepAll: true,
+    //         alwaysLinkToLastBuild: true,
+    //         allowMissing: true
+    //       ])
+    //     }
+    //   }
+    }
   }
 
   post {
