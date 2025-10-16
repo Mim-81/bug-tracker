@@ -114,19 +114,19 @@ pipeline {
             sh 'npx playwright test'
         }
       }
-    //   post {
-    //     always {
-    //       junit 'tests-api/test-results/*.xml'
-    //       publishHTML(target: [
-    //         reportDir: 'tests-api/test-results/html',
-    //         reportFiles: 'index.html',
-    //         reportName: 'API Test Report',
-    //         keepAll: true,
-    //         alwaysLinkToLastBuild: true,
-    //         allowMissing: true
-    //       ])
-    //     }
-    //   }
+      post {
+        always {
+          junit 'tests-api/test-results/results.xml'
+          publishHTML(target: [
+            reportDir: 'tests-api/playwright-report',
+            reportFiles: 'index.html',
+            reportName: 'Playwright API Test Report',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
+        }
+      }
     }
   }
 
