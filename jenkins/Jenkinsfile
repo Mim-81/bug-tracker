@@ -104,14 +104,14 @@ pipeline {
       }
       steps {
         dir('tests-api') {
-        //   sh '''
-        //     npm ci
-        //     npx playwright install --with-deps
-        //     npx playwright test api --reporter=junit --output=./test-results
-        //   '''
-            sh 'npx wait-port http://localhost:8080/api/health -t 30000'
-            sh ' npm ci'
-            sh 'npx playwright test'
+          // sh '''
+          //   npm ci
+          //   npx playwright install --with-deps
+          //   npx playwright test api --reporter=junit --output=./test-results
+          // '''
+          sh 'npx wait-port http://localhost:8080/api/health -t 30000'
+          sh 'npm ci'
+          sh 'npx playwright test'
         }
       }
       post {
@@ -129,19 +129,19 @@ pipeline {
       }
     }
 
-    stage('E2E Tests'){
+    stage('E2E Tests') {
       agent {
         docker {
-        image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
-        args '-u 0:0 --network host'  // Use host networking to access the app
-        reuseNode true
+          image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+          args '-u 0:0 --network host'  // Use host networking to access the app
+          reuseNode true
         }
-      }  
+      }
       steps {
         dir('tests-e2e') {
-            //sh 'npx wait-port http://localhost:8080 -t 30000'
-            sh ' npm ci'
-            sh 'npx playwright test'
+          // sh 'npx wait-port http://localhost:8080 -t 30000'
+          sh 'npm ci'
+          sh 'npx playwright test'
         }
       }
       post {
@@ -159,29 +159,51 @@ pipeline {
       }
     }
 
-    stage('Performance Tests'){
+    // =========================
+    // FIXED Performance stage
+    // =========================
+    stage('Performance Tests') {
+      environment {
+        // default compose network name: "<folder>_default"
+        COMPOSE_NET = 'bug-tracker_default'           // <-- change if your folder name differs
+        BASE_URL    = 'http://bugtracker-backend:8080' // <-- backend service name + port from docker-compose.yml
+      }
       agent {
         docker {
-        image 'grafana/k6:latest'
-        args '--network host -u 0:0 root --entrypoint=""'  // Use host networking to access the app
-        reuseNode true
+          image 'grafana/k6:latest'
+          // Put k6 container on the same network as the app so it can reach "bugtracker-backend"
+          // NOTE: "--network host" does not work on Docker Desktop (Mac/Windows); use the compose network instead.
+          args "--network ${COMPOSE_NET} -u 0:0"
+          reuseNode true
         }
-      }  
+      }
       steps {
         dir('tests-perf') {
-          //sh 'npx wait-port http://localhost:8080 -t 30000'
-          sh 'k6 run script.js'
-          // sh ' npm ci'
-          // sh 'npx playwright test'
+          // If your k6 script still hardcodes localhost, update it to:
+          // const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080'
+          //
+          // Wait for the backend to be healthy inside this network.
+          // BusyBox wget is available in the k6 image.
+          sh '''
+            echo "Waiting for $BASE_URL/api/health ..."
+            for i in $(seq 1 30); do
+              wget -qO- "$BASE_URL/api/health" > /dev/null && { echo "Backend is up"; break; }
+              sleep 2
+            done
+
+            # Run k6 and pass BASE_URL so the script resolves the correct host
+            k6 run -e BASE_URL="$BASE_URL" script.js
+          '''
+          // sh 'k6 run script.js'  // old direct call (will fail if script uses localhost)
         }
       }
       // post {
       //   always {
-      //     junit 'tests-performance/test-results/results.xml'
+      //     // If you produce an HTML report (e.g., perf-results.html), publish it:
       //     publishHTML(target: [
-      //       reportDir: 'tests-performance/playwright-report',
-      //       reportFiles: 'index.html',
-      //       reportName: 'Playwright Performance Test Report',
+      //       reportDir: 'tests-perf',
+      //       reportFiles: 'perf-results.html',
+      //       reportName: 'k6 Performance Report',
       //       keepAll: true,
       //       alwaysLinkToLastBuild: true,
       //       allowMissing: true

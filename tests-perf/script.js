@@ -3,6 +3,9 @@ import { sleep, check } from "k6";
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 
+// Read BASE_URL from env (Jenkins passes it), default to localhost when running locally
+const BASE_URL = __ENV.BASE_URL || "http://localhost:8080";
+
 export const options = {
   duration: "30s",
   vus: 1,
