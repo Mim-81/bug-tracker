@@ -3,30 +3,18 @@ import { sleep, check } from "k6";
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 
-// Read BASE_URL from env (Jenkins passes it), default to localhost when running locally
-const BASE_URL = __ENV.BASE_URL || "http://localhost:8080";
-
 export const options = {
   duration: "30s",
   vus: 1,
   thresholds: {
-    // http errors should be less than 1%
-    http_req_failed: ["rate<0.01"],
-
-    // --- Per-endpoint thresholds (more realistic) ---
-    // Health should be very fast:
-    "http_req_duration{name:health}": ["p(95)<200"],
-    // Create bug may be slower (DB, hashing, etc.):
-    "http_req_duration{name:create_bug}": ["p(95)<800"],
-
-    // --- Previous global threshold (kept for reference) ---
-    // http_req_duration: ["p(95)<500"], // 95 percent of response times must be below 500ms
+    http_req_failed: ["rate<0.01"], // http errors should be less than 1%
+    http_req_duration: ["p(95)<500"], // 95 percent of response times must be below 500ms
   },
 };
 
 export default function () {
   // Health check
-  const healthRes = http.get(`${BASE_URL}/api/health`, { tags: { name: "health" } });
+  const healthRes = http.get("http://localhost:8080/api/health");
   check(healthRes, {
     "health check status is 200": (r) => r.status === 200,
   });
@@ -41,15 +29,13 @@ export default function () {
 
   const headers = { "Content-Type": "application/json" };
 
-  const createBugRes = http.post(`${BASE_URL}/api/bugs`, payload, {
+  const createBugRes = http.post("http://localhost:8080/api/bugs", payload, {
     headers,
-    tags: { name: "create_bug" },
   });
 
-  // Use r.json('id') which safely parses JSON and gets the field
   check(createBugRes, {
     "create bug status is 201": (r) => r.status === 201,
-    "bug has an id": (r) => r.status === 201 && r.json && r.json("id") !== undefined,
+    "bug has an id": (r) => JSON.parse(r.body).id !== undefined,
   });
 
   sleep(5);
