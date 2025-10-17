@@ -157,8 +157,37 @@ pipeline {
           ])
         }
       }
-    }
- }
+
+      stage('Performance Tests'){
+        agent {
+          docker {
+          image 'grafana/k6:latest'
+          args '--network host -u 0:0 root --entrypoint=""'  // Use host networking to access the app
+          reuseNode true
+          }
+        }  
+        steps {
+          dir('tests-perf') {
+              //sh 'npx wait-port http://localhost:8080 -t 30000'
+              sh 'k6 run script.js'
+              // sh ' npm ci'
+              // sh 'npx playwright test'
+          }
+        }
+        // post {
+        //   always {
+        //     junit 'tests-performance/test-results/results.xml'
+        //     publishHTML(target: [
+        //       reportDir: 'tests-performance/playwright-report',
+        //       reportFiles: 'index.html',
+        //       reportName: 'Playwright Performance Test Report',
+        //       keepAll: true,
+        //       alwaysLinkToLastBuild: true,
+        //       allowMissing: true
+        //     ])
+        //   }
+        // }
+      } 
 
   post {
     always {
