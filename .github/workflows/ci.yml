@@ -28,11 +28,10 @@ jobs:
       - name: Publish Backend Test Results
         uses: dorny/test-reporter@v1 # Adjust version of action to have latest features
         if: always()
-        
         with:
-          name: backend Unit Tests Report
+          name: Backend Unit Tests Report
           path: bugtracker-backend/test-results.xml
-          reporter: go-junit-report
+          reporter: junit-report
 
   unit-tests-frontend:
     needs: unit-tests-backend # Ensure backend tests run first
