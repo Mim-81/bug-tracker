@@ -31,7 +31,7 @@ jobs:
         with:
           name: Backend Unit Tests Report
           path: bugtracker-backend/test-results.xml
-          reporter: junit-report
+          reporter: jest-junit
 
   unit-tests-frontend:
     needs: unit-tests-backend # Ensure backend tests run first
