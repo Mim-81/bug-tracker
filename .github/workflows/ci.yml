@@ -41,6 +41,15 @@ jobs:
         run: |
           npm ci
           npm test
+
+      - name: Publish Frontend Test Results
+        uses: dorny/test-reporter@v1 # Adjust version of action to have latest features
+        if: always()
+        
+        with:
+          name: frontend Unit Tests Report 
+          path: bugtracker-frontend/test-results.xml
+          reporter: jest-junit
       #   uses: actions/setup-python@v4
       #   with:
       #     python-version: '3.9'
