@@ -19,14 +19,15 @@ jobs:
           cache-dependency-path: bugtracker-backend/go.sum
 
       - name: Install go-junit-report
-        run: go install github.com/jstemmer/go-junit-report/v2@latest # Install go-junit-report for test result formatting
+        run: go install github.com/jstemmer/go-junit-report/v2@latest
 
       - name: Execute Backend Unit tests
         working-directory: ./bugtracker-backend
         run: |
-          go test -v ./... 2>&1 | go-junit-report > test-results.xml  
+          go test -v ./... 2>&1 | go-junit-report > test-results.xml 
+
       - name: Publish Backend Test Results
-        uses: dorny/test-reporter@v1 # Adjust version of action to have latest features
+        uses: dorny/test-reporter@v1
         if: always()
         with:
           name: Backend Unit Tests Report
@@ -55,7 +56,7 @@ jobs:
       - name: Publish Frontend Test Results
         uses: dorny/test-reporter@v1 # Adjust version of action to have latest features
         if: always()
-        
+
         with:
           name: frontend Unit Tests Report 
           path: bugtracker-frontend/test-results.xml
