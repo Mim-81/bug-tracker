@@ -22,6 +22,25 @@ jobs:
         working-directory: ./bugtracker-backend
         run: |
           go test -v ./...
+
+  unit-tests-frontend:
+    needs: unit-tests-backend // Ensure backend tests run first
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: bugtracker-frontend/package-lock.json
+
+      - name: Execute Frontend Unit tests
+        working-directory: ./bugtracker-frontend
+        run: |
+          npm ci
+          npm test -- --watchAll=false
       #   uses: actions/setup-python@v4
       #   with:
       #     python-version: '3.9'
