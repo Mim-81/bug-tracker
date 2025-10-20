@@ -40,7 +40,7 @@ jobs:
         working-directory: ./bugtracker-frontend
         run: |
           npm ci
-          npm test -- --watchAll=false
+          npm test
       #   uses: actions/setup-python@v4
       #   with:
       #     python-version: '3.9'
