@@ -137,7 +137,6 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps
-          # Produce JUnit XML + HTML so we can publish results
           npx playwright test
       
       - name: Shut Down Application
