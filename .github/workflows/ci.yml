@@ -119,45 +119,50 @@ jobs:
   api-tests:
     needs: [unit-tests-backend, unit-tests-frontend]
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Launch Application
         run: |
           docker compose up --build -d
-          npx wait-port http://localhost:8080/api/health -t 30000
+          # Wait for the *URL* to be ready (not just a TCP port)
+          npx -y wait-on http://localhost:8080/api/health --timeout 30000
 
-      - name: Run API Tests
+      - name: Run API Tests (Playwright)
         working-directory: ./tests-api
+        env:
+          BASE_URL: http://localhost:8080
         run: |
           npm ci
-          npm playwright test
-      
+          npx playwright install --with-deps
+          # Produce JUnit XML + HTML so we can publish results
+          npx playwright test --reporter=junit,html
+
       - name: Shut Down Application
+        if: always()
         run: docker compose down
 
-      - name: Upload API Test Results
+      - name: Upload API Test Results (JUnit XML)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
-          path: ./tests-api/test-results/
+          path: ./tests-api/test-results/**/*.xml
           retention-days: 30
 
-      - name: Upload API Test playwright Reports
+      - name: Upload API Test HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: api-test-playwright-results
+          name: api-test-playwright-report
           path: ./tests-api/playwright-report
           retention-days: 30
 
-      - name: Publish API Test Results
-        uses: dorny/test-reporter@v1
+      - name: Publish API Tests in Checks
         if: always()
+        uses: dorny/test-reporter@v1
         with:
           name: API Tests Report
-          path: ./tests-api/test-results/*.xml
-          reporter: jest-junit
+          path: ./tests-api/test-results/**/*.xml
+          reporter: jest-junit   # OK for Playwright’s JUnit output
