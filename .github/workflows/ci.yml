@@ -132,9 +132,13 @@ jobs:
 
       - name: Run API Tests
         working-directory: ./tests-api
+        env:
+          BASE_URL: http://localhost:8080
         run: |
           npm ci
-          npx playwright test
+          npx playwright install --with-deps
+          # Produce JUnit XML + HTML so we can publish results
+          npx playwright test --reporter=junit,html
       
       - name: Shut Down Application
         run: docker compose down
