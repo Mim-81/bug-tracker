@@ -155,6 +155,7 @@ jobs:
         uses: grafana/run-k6-action@v1
         with:
           path: tests-perf/script.js
+          flags: --out json=summary.json
       
       - name: Shut Down Application
         run: docker compose down
@@ -189,6 +190,22 @@ jobs:
         with:
           name: e2e-test-playwright-results
           path: ./tests-e2e/playwright-report
+          retention-days: 30
+
+      - name: Upload Performance Raw Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-raw-results
+          path: ./tests-perf/summary.json
+          retention-days: 30
+
+      - name: Upload Performance HTML Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: ./tests-perf/perf-results.html
           retention-days: 30
 
       - name: Publish API Test Results
