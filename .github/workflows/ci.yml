@@ -117,56 +117,47 @@ jobs:
             ${{ needs.unit-tests-frontend.outputs.coverage }}
             ```
   api-tests:
-  needs: [unit-tests-backend, unit-tests-frontend]
-  runs-on: ubuntu-latest
+    needs: [unit-tests-backend, unit-tests-frontend]
+    runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Launch Application
+        run: |
+          docker compose up --build -d
+          npx wait-port http://localhost:8080/api/health -t 30000
 
-    - name: Launch Application
-      run: |
-        docker compose up --build -d
-        # Wait until the health endpoint is actually reachable (URL-aware)
-        npx -y wait-on http://localhost:8080/api/health --timeout 30000
+      - name: Run API Tests
+        working-directory: ./tests-api
+        run: |
+          npm ci
+          npm playwright test
+      
+      - name: Shut Down Application
+        run: docker compose down
 
-    - name: Run API Tests (Playwright)
-      working-directory: ./tests-api
-      env:
-        # Optional: pass base URL to tests so they don't hardcode localhost
-        BASE_URL: http://localhost:8080
-      run: |
-        npm ci
-        # Produce JUnit XML + HTML report
-        # - JUnit will go to ./test-results/results.xml
-        # - HTML will go to ./playwright-report
-        npx playwright test --reporter=junit,html
+      - name: Upload API Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-results
+          path: ./tests-api/test-results/
+          retention-days: 30
 
-    - name: Shut Down Application
-      if: always()
-      run: docker compose down
+      - name: Upload API Test playwright Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-playwright-results
+          path: ./tests-api/playwright-report
+          retention-days: 30
 
-    - name: Upload API Test Results (JUnit XML)
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-test-results
-        path: ./tests-api/test-results/**/*.xml
-        retention-days: 30
-
-    - name: Upload API Test HTML Report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-test-playwright-report
-        path: ./tests-api/playwright-report
-        retention-days: 30
-
-    - name: Publish API Tests in PR checks
-      if: always()
-      uses: dorny/test-reporter@v1
-      with:
-        name: API Tests Report
-        path: ./tests-api/test-results/**/*.xml
-        reporter: jest-junit   # OK for Playwright’s JUnit output
-
+      - name: Publish API Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: API Tests Report
+          path: ./tests-api/test-results/*.xml
+          reporter: jest-junit
