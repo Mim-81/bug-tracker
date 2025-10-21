@@ -165,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
-          path: ./tests-api/test-results/results.xml
+          path: bug-tracker/tests-api/test-results/results.xml
           retention-days: 30
 
       - name: Upload API Test playwright Reports
@@ -173,7 +173,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-test-playwright-results
-          path: ./tests-api/playwright-report
+          path: bug-tracker/tests-api/playwright-report
           retention-days: 30
 
       - name: Upload E2E Test Results
@@ -181,7 +181,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2e-test-results
-          path: ./tests-e2e/test-results
+          path: bug-tracker/tests-e2e/test-results
           retention-days: 30
 
       - name: Upload E2E Test playwright Reports
@@ -189,7 +189,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2e-test-playwright-results
-          path: ./tests-e2e/playwright-report
+          path: bug-tracker/tests-e2e/playwright-report
           retention-days: 30
 
       - name: Upload Performance Raw Results
@@ -213,7 +213,7 @@ jobs:
         if: always()
         with:
           name: API Tests Report
-          path: ./tests-api/test-results/results.xml
+          path: bug-tracker/tests-api/test-results/results.xml
           reporter: jest-junit
 
       - name: Publish E2E Test Results
@@ -221,5 +221,5 @@ jobs:
         if: always()
         with:
           name: E2E Tests Report
-          path: ./tests-e2e/test-results/results.xml
+          path: bug-tracker/tests-e2e/test-results/results.xml
           reporter: jest-junit
