@@ -197,7 +197,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: performance-raw-results
-          path: ./tests-perf/summary.json
+          path: summary.json
           retention-days: 30
 
       - name: Upload Performance HTML Results
@@ -205,7 +205,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: performance-report
-          path: ./tests-perf/perf-results.html
+          path: perf-results.html
           retention-days: 30
 
       - name: Publish API Test Results
@@ -213,7 +213,7 @@ jobs:
         if: always()
         with:
           name: API Tests Report
-          path: ./tests-api/test-results/*.xml
+          path: results.xml
           reporter: jest-junit
 
       - name: Publish E2E Test Results
@@ -221,5 +221,5 @@ jobs:
         if: always()
         with:
           name: E2E Tests Report
-          path: ./tests-e2e/test-results/*.xml
+          path: ./tests-e2e/**/results.xml
           reporter: jest-junit
