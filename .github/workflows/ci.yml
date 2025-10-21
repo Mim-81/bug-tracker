@@ -127,10 +127,9 @@ jobs:
       - name: Launch Application
         run: |
           docker compose up --build -d
-          # Wait for the API to be healthy (HTTP 200)
           npx -y wait-on http://localhost:8080/api/health -t 30000
 
-      # -------- API tests --------
+      # ---------- API tests ----------
       - name: Run API Tests
         working-directory: ./tests-api
         env:
@@ -138,10 +137,12 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps
-          # reporters are taken from playwright.config.ts (junit + html)
-          npx playwright test
+          # Force reporters so JUnit XML + HTML are always generated
+          npx playwright test \
+            --reporter=junit,html \
+            --reporter-options junit.outputFile=test-results/results.xml,html.outputFolder=playwright-report
 
-      # -------- E2E tests --------
+      # ---------- E2E tests ----------
       - name: Run E2E Tests
         working-directory: ./tests-e2e
         env:
@@ -149,21 +150,35 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps
-          npx playwright test
+          npx playwright test \
+            --reporter=junit,html \
+            --reporter-options junit.outputFile=test-results/results.xml,html.outputFolder=playwright-report
 
-      # -------- Performance (k6) --------
+      # ---------- Performance (k6) ----------
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
 
+      # Use CLI so we control where files go; write JSON+HTML into tests-perf/
       - name: Run Performance Test
-        # write JSON summary into tests-perf/, HTML is created there by handleSummary()
-        run: k6 run --out json=tests-perf/summary.json tests-perf/script.js
+        run: |
+          k6 run --out json=tests-perf/summary.json tests-perf/script.js
 
       - name: Shut Down Application
         if: always()
         run: docker compose down
 
-      # -------- Upload artifacts --------
+      # Quick proof of file locations in the runner
+      - name: List produced files (debug)
+        if: always()
+        run: |
+          echo "== tests-api =="
+          ls -R tests-api || true
+          echo "== tests-e2e =="
+          ls -R tests-e2e || true
+          echo "== tests-perf =="
+          ls -R tests-perf || true
+
+      # ---------- Upload artifacts ----------
       - name: Upload API Test Results (XML)
         if: always()
         uses: actions/upload-artifact@v4
@@ -212,14 +227,14 @@ jobs:
           path: ./tests-perf/perf-results.html
           retention-days: 30
 
-      # -------- Publish checks in “Summary” --------
+      # ---------- Publish checks in Actions Summary ----------
       - name: Publish API Test Results
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: API Tests Report
           path: ./tests-api/test-results/results.xml
-          reporter: jest-junit
+          reporter: junit
 
       - name: Publish E2E Test Results
         if: always()
@@ -227,4 +242,5 @@ jobs:
         with:
           name: E2E Tests Report
           path: ./tests-e2e/test-results/results.xml
-          reporter: jest-junit
+          reporter: junit
+
