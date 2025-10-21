@@ -2,11 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main  
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -50,7 +48,7 @@ jobs:
         with:
           name: Backend Unit Tests Report
           path: bugtracker-backend/test-results.xml
-          reporter: jest-junit
+          reporter: java-junit   # <-- changed
 
   unit-tests-frontend:
     runs-on: ubuntu-latest
@@ -85,11 +83,10 @@ jobs:
       - name: Publish Frontend Test Results
         uses: dorny/test-reporter@v1
         if: always()
-
         with:
           name: frontend Unit Tests Report 
           path: bugtracker-frontend/test-results.xml
-          reporter: jest-junit
+          reporter: java-junit   # <-- changed
 
   create-coverage-comment:
     if: github.event_name == 'pull_request'
@@ -116,6 +113,7 @@ jobs:
             ```
             ${{ needs.unit-tests-frontend.outputs.coverage }}
             ```
+
   api-e2e-perf-tests:
     needs: [unit-tests-backend, unit-tests-frontend]
     runs-on: ubuntu-latest
@@ -137,7 +135,6 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps
-          # Force reporters so JUnit XML + HTML are always generated
           npx playwright test \
             --reporter=junit,html \
             --reporter-options junit.outputFile=test-results/results.xml,html.outputFolder=playwright-report
@@ -158,7 +155,6 @@ jobs:
       - name: Setup k6
         uses: grafana/setup-k6-action@v1
 
-      # Use CLI so we control where files go; write JSON+HTML into tests-perf/
       - name: Run Performance Test
         run: |
           k6 run --out json=tests-perf/summary.json tests-perf/script.js
@@ -167,16 +163,12 @@ jobs:
         if: always()
         run: docker compose down
 
-      # Quick proof of file locations in the runner
       - name: List produced files (debug)
         if: always()
         run: |
-          echo "== tests-api =="
-          ls -R tests-api || true
-          echo "== tests-e2e =="
-          ls -R tests-e2e || true
-          echo "== tests-perf =="
-          ls -R tests-perf || true
+          echo "== tests-api ==" && ls -R tests-api || true
+          echo "== tests-e2e ==" && ls -R tests-e2e || true
+          echo "== tests-perf ==" && ls -R tests-perf || true
 
       # ---------- Upload artifacts ----------
       - name: Upload API Test Results (XML)
@@ -227,14 +219,14 @@ jobs:
           path: ./tests-perf/perf-results.html
           retention-days: 30
 
-      # ---------- Publish checks in Actions Summary ----------
+      # ---------- Publish checks ----------
       - name: Publish API Test Results
         if: always()
         uses: dorny/test-reporter@v1
         with:
           name: API Tests Report
           path: ./tests-api/test-results/results.xml
-          reporter: junit
+          reporter: java-junit   # <-- changed
 
       - name: Publish E2E Test Results
         if: always()
@@ -242,5 +234,4 @@ jobs:
         with:
           name: E2E Tests Report
           path: ./tests-e2e/test-results/results.xml
-          reporter: junit
-
+          reporter: java-junit   # <-- changed
