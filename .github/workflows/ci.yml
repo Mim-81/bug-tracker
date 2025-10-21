@@ -143,12 +143,12 @@ jobs:
       - name: Shut Down Application
         run: docker compose down
 
-      - name: Upload API Test Results (JUnit XML)
+      - name: Upload API Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
-          path: ./tests-api/test-results/**/*.xml
+          path: ./tests-api/test-results
           retention-days: 30
 
       - name: Upload API Test playwright Reports
@@ -164,5 +164,5 @@ jobs:
         if: always()
         with:
           name: API Tests Report
-          path: ./tests-api/test-results/**/*.xml
+          path: ./tests-api/test-results/*.xml
           reporter: jest-junit
