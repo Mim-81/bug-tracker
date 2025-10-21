@@ -127,8 +127,7 @@ jobs:
       - name: Launch Application
         run: |
           docker compose up --build -d
-          # Wait for the *URL* to be ready (not just a TCP port)
-          npx -y wait-on http://localhost:8080/api/health -t 30000
+          npx wait-on http://localhost:8080/api/health -t 30000
 
       - name: Run API Tests
         working-directory: ./tests-api
@@ -136,10 +135,10 @@ jobs:
           BASE_URL: http://localhost:8080
         run: |
           npm ci
-          npx playwright install --with-deps
+          npx playwright install
           npx playwright test
 
-      - name: RUn E2E Tests
+      - name: Run E2E Tests
         working-directory: ./tests-e2e
         env:
           CI: "1"
