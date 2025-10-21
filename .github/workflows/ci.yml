@@ -136,8 +136,7 @@ jobs:
           npm playwright test
       
       - name: Shut Down Application
-        run: |
-          docker compose down
+        run: docker compose down
 
       - name: Publish API Test Results
         if: always()
