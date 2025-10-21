@@ -219,7 +219,7 @@ jobs:
         with:
           name: API Tests Report
           path: ./tests-api/test-results/results.xml
-          reporter: junit
+          reporter: jest-junit
 
       - name: Publish E2E Test Results
         if: always()
@@ -227,4 +227,4 @@ jobs:
         with:
           name: E2E Tests Report
           path: ./tests-e2e/test-results/results.xml
-          reporter: junit
+          reporter: jest-junit
