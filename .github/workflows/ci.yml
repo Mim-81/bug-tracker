@@ -155,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-test-playwright-results
-          path: ./tests-api/playwright-report
+          path: ./tests-api/playwright-report/
           retention-days: 30
 
       - name: Publish API Test Results
